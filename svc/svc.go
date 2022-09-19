@@ -7,27 +7,27 @@ import (
 )
 
 const (
-	EventChanBound = 10
+	EventChanBound          = 10
 	SubscriptionTimeoutSecs = 30
 )
 
 type Event struct {
-	id uint64
-	msg string
+	Id  uint64
+	Msg string
 }
 
 type Subscription struct {
-	id uint64
-	eventsC chan Event 
+	id      uint64
+	eventsC chan Event
 	onClose func()
 }
 
-func (s *Subscription) Listen() <-chan Event{
+func (s *Subscription) Listen() <-chan Event {
 	return s.eventsC
 }
 
 func (s *Subscription) Publish(id uint64, msg string) {
-	s.eventsC <- Event{id:id, msg:msg}
+	s.eventsC <- Event{Id: id, Msg: msg}
 }
 
 func (s *Subscription) Close() {
@@ -37,8 +37,8 @@ func (s *Subscription) Close() {
 
 type Topic struct {
 	subscriptions map[uint64]*Subscription
-	mu sync.RWMutex
-	sub_idx uint64
+	mu            sync.RWMutex
+	sub_idx       uint64
 }
 
 func (t *Topic) Subscribe() *Subscription {
@@ -46,13 +46,12 @@ func (t *Topic) Subscribe() *Subscription {
 	defer t.mu.Unlock()
 
 	atomic.AddUint64(&t.sub_idx, 1)
-	id := atomic.LoadUint64(&t.sub_idx) 
+	id := atomic.LoadUint64(&t.sub_idx)
 
 	sub := &Subscription{
-		id: id,
+		id:      id,
 		eventsC: make(chan Event, EventChanBound),
 		onClose: t.onClose(id),
-		
 	}
 
 	t.subscriptions[id] = sub
@@ -84,8 +83,8 @@ type EventService interface {
 
 type service struct {
 	subscriptions map[string]*Topic
-	event_idx uint64
-	mu sync.RWMutex
+	event_idx     uint64
+	mu            sync.RWMutex
 }
 
 func NewService() EventService {
@@ -126,10 +125,9 @@ func (s *service) Publish(topic, message string) (uint64, error) {
 	}
 
 	atomic.AddUint64(&s.event_idx, 1)
-	id := atomic.LoadUint64(&s.event_idx) 
+	id := atomic.LoadUint64(&s.event_idx)
 
 	s.subscriptions[topic].Publish(id, message)
 
-	return id, nil 
+	return id, nil
 }
-
