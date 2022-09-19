@@ -1,2 +1,2 @@
 # server-sent-events
-Implementation fo SSE in go
+Implementation of SSE in go
