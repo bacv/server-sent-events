@@ -4,11 +4,12 @@ import (
 	"errors"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 const (
-	EventChanBound          = 10
-	SubscriptionTimeoutSecs = 30
+	EventChanBound      = 10
+	SubscriptionTimeout = 30 * time.Second
 )
 
 type Event struct {

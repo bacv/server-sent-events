@@ -15,6 +15,16 @@ import (
 func main() {
 	eventService := svc.NewService()
 
+	app, err := setup(eventService, svc.SubscriptionTimeout)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// TODO: pass port as a param.
+	log.Fatal(app.Listen(":8090"))
+}
+
+func setup(eventService svc.EventService, timeout time.Duration) (*fiber.App, error) {
 	app := fiber.New()
 
 	app.Post("/:topic", func(c *fiber.Ctx) error {
@@ -30,7 +40,7 @@ func main() {
 	})
 
 	app.Get("/:topic", func(c *fiber.Ctx) error {
-		params := c.AllParams() 
+		params := c.AllParams()
 		topic := params["topic"]
 
 		if topic == "" {
@@ -45,20 +55,20 @@ func main() {
 		c.Context().SetBodyStreamWriter(fasthttp.StreamWriter(func(w *bufio.Writer) {
 			sub, err := eventService.Subscribe(topic)
 			if err != nil {
-				return 
+				return
 			}
 			defer sub.Close()
 
 			var isTimeout bool
 			for {
 				select {
-				case event := <- sub.Listen():
+				case event := <-sub.Listen():
 					fmt.Fprintf(w, "id: %d\n", event.Id)
 					fmt.Fprintf(w, "event: msg\n")
 					fmt.Fprintf(w, "data: %s\n", event.Msg)
-				case <-time.After(svc.SubscriptionTimeoutSecs * time.Second):
+				case <-time.After(timeout):
 					fmt.Fprintf(w, "event: timeout\n")
-					fmt.Fprintf(w, "data: %ds\n", svc.SubscriptionTimeoutSecs)
+					fmt.Fprintf(w, "data: %ds\n", svc.SubscriptionTimeout)
 					isTimeout = true
 				}
 
@@ -72,5 +82,5 @@ func main() {
 		return nil
 	})
 
-	log.Fatal(app.Listen(":8090"))
+	return app, nil
 }
