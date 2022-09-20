@@ -24,6 +24,8 @@ func main() {
 	log.Fatal(app.Listen(":8090"))
 }
 
+// setup creates a new fiber app and defines two endpoints for publishing and 
+// event and subscribing to the servent sent event stream.
 func setup(eventService svc.EventService, timeout time.Duration) (*fiber.App, error) {
 	app := fiber.New()
 
